@@ -32,6 +32,8 @@ async function fetchImage(url, callback, headers, abort, requests) {
   }).then(async f => {
     const blob = await f.blob();
     callback(blob);
+  }).catch(e => {
+    callback(null);
   });
 }
 
@@ -51,11 +53,15 @@ L.TileLayer.WMSHeader = L.TileLayer.WMS.extend({
     fetchImage(
       url,
       resp => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          img.src = reader.result;
-        };
-        reader.readAsDataURL(resp);
+        if (resp) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(resp);
+        } else {
+          img.src = Util.emptyImageUrl
+        }
         done(null, img);
       },
       this.headers,
@@ -64,7 +70,7 @@ L.TileLayer.WMSHeader = L.TileLayer.WMS.extend({
     );
     return img;
   },
-  _abortLoading: function() {
+  _abortLoading: function () {
     for (const i in this._tiles) {
       if (this._tiles[i].coords.z !== this._tileZoom) {
         const tile = this._tiles[i].el;
